@@ -1,0 +1,18 @@
+/**
+ * Theme Name: Blocksy Child
+ * Description: Blocksy Child theme
+ * Author: Creative Themes
+ * Template: blocksy
+ * Text Domain: blocksy
+ */
+
+.supportgenix-custom-search-box {
+    margin: 0 auto 40px;
+    width: 55%;
+}
+form.search-form input[type="search"], .supportgenix-custom-search-box form.search-form button , section.ct-no-results form.search-form button {
+    height: 70px;
+}
+.supportgenix-custom-search-box .ct-search-results {
+    padding-top: 84px;
+}
