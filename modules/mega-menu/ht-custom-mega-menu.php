@@ -40,21 +40,110 @@ class HT_MegaMenuPlugin {
     public function ht_add_custom_fields($item_id, $item, $depth, $args) {
         $is_mega_menu = get_post_meta($item_id, 'ht_is_mega_menu', true);
         $pattern_id = get_post_meta($item_id, 'ht_pattern_id', true);
+        $page_id = get_post_meta($item_id, 'ht_page_id', true);
+        $content_type = get_post_meta($item_id, 'ht_content_type', true);
+        
+        // Default content type
+        if (empty($content_type)) {
+            $content_type = 'pattern';
+        }
         ?>
-        <div class="ht-mega-menu-fields" style="margin-top: 10px;">
+        <div class="ht-mega-menu-fields ht-mega-menu-item-<?php echo $item_id; ?>" style="margin-top: 10px; background: #f5f5f5; padding: 10px; border-radius: 4px;">
             <p class="description">
                 <label>
-                    <input type="checkbox" name="ht_is_mega_menu[<?php echo $item_id; ?>]" value="1" <?php checked($is_mega_menu, '1'); ?> class="ht-mega-menu-checkbox" data-item-id="<?php echo $item_id; ?>">
-                    Enable Mega Menu
+                    <input type="checkbox" 
+                           name="ht_is_mega_menu[<?php echo $item_id; ?>]" 
+                           value="1" 
+                           <?php checked($is_mega_menu, '1'); ?> 
+                           class="ht-mega-menu-checkbox"
+                           onchange="htMegaMenuToggle(this, <?php echo $item_id; ?>)">
+                    <strong>Enable Mega Menu</strong>
                 </label>
             </p>
-            <p class="description ht-mega-menu-pattern-field" style="<?php echo $is_mega_menu ? '' : 'display:none;'; ?>">
-                <label>
-                    Block Pattern ID:
-                    <input type="text" name="ht_pattern_id[<?php echo $item_id; ?>]" value="<?php echo esc_attr($pattern_id); ?>" placeholder="e.g., 1026" style="width: 100px;">
-                </label>
-            </p>
+            
+            <div class="ht-mega-menu-content-options ht-content-options-<?php echo $item_id; ?>" style="<?php echo $is_mega_menu ? 'margin-left: 20px; margin-top: 10px;' : 'display:none; margin-left: 20px; margin-top: 10px;'; ?>">
+                <p class="description">
+                    <label>
+                        <strong>Content Type:</strong>
+                        <select name="ht_content_type[<?php echo $item_id; ?>]" 
+                                class="ht-content-type-selector"
+                                onchange="htContentTypeChange(this, <?php echo $item_id; ?>)">
+                            <option value="pattern" <?php selected($content_type, 'pattern'); ?>>Block Pattern</option>
+                            <option value="page" <?php selected($content_type, 'page'); ?>>Page Content</option>
+                        </select>
+                    </label>
+                </p>
+                
+                <!-- Block Pattern Field -->
+                <div class="ht-mega-menu-pattern-field ht-pattern-field-<?php echo $item_id; ?> ht-content-field" style="<?php echo ($content_type === 'pattern') ? '' : 'display:none;'; ?>">
+                    <p class="description">
+                        <label>
+                            <strong>Block Pattern ID:</strong><br>
+                            <input type="text" name="ht_pattern_id[<?php echo $item_id; ?>]" value="<?php echo esc_attr($pattern_id); ?>" placeholder="e.g., 1026" style="width: 200px; margin-top: 5px;">
+                        </label>
+                    </p>
+                </div>
+                
+                <!-- Page Selection Field -->
+                <div class="ht-mega-menu-page-field ht-page-field-<?php echo $item_id; ?> ht-content-field" style="<?php echo ($content_type === 'page') ? '' : 'display:none;'; ?>">
+                    <p class="description">
+                        <label>
+                            <strong>Select Page:</strong><br>
+                            <select name="ht_page_id[<?php echo $item_id; ?>]" class="ht-page-select" style="width: 200px; margin-top: 5px;">
+                                <option value="">-- Select Page --</option>
+                                <?php
+                                $pages = get_pages(array(
+                                    'post_status' => 'publish',
+                                    'sort_order' => 'ASC',
+                                    'sort_column' => 'post_title',
+                                ));
+                                foreach ($pages as $page) {
+                                    echo '<option value="' . $page->ID . '" ' . selected($page_id, $page->ID, false) . '>' . 
+                                         esc_html($page->post_title) . ' (ID: ' . $page->ID . ')</option>';
+                                }
+                                ?>
+                            </select>
+                            <span style="display: block; font-size: 11px; color: #666; margin-top: 3px;">
+                                Or enter Page ID manually: 
+                                <input type="text" name="ht_page_id_manual[<?php echo $item_id; ?>]" class="ht-page-id-manual" value="<?php echo esc_attr($page_id); ?>" placeholder="123" style="width: 60px;">
+                            </span>
+                        </label>
+                    </p>
+                </div>
+            </div>
         </div>
+        
+        <script>
+        // Inline functions for immediate execution
+        function htMegaMenuToggle(checkbox, itemId) {
+            var contentOptions = document.querySelector('.ht-content-options-' + itemId);
+            if (checkbox.checked) {
+                contentOptions.style.display = 'block';
+                // Trigger content type change
+                var selector = contentOptions.querySelector('.ht-content-type-selector');
+                if (selector) {
+                    htContentTypeChange(selector, itemId);
+                }
+            } else {
+                contentOptions.style.display = 'none';
+            }
+        }
+        
+        function htContentTypeChange(selector, itemId) {
+            var contentType = selector.value;
+            var patternField = document.querySelector('.ht-pattern-field-' + itemId);
+            var pageField = document.querySelector('.ht-page-field-' + itemId);
+            
+            if (patternField) patternField.style.display = 'none';
+            if (pageField) pageField.style.display = 'none';
+            
+            if (contentType === 'pattern' && patternField) {
+                patternField.style.display = 'block';
+            } else if (contentType === 'page' && pageField) {
+                pageField.style.display = 'block';
+            }
+        }
+        </script>
         <?php
     }
     
@@ -69,6 +158,11 @@ class HT_MegaMenuPlugin {
             delete_post_meta($menu_item_db_id, 'ht_is_mega_menu');
         }
         
+        // Save content type
+        if (isset($_POST['ht_content_type'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_content_type', sanitize_text_field($_POST['ht_content_type'][$menu_item_db_id]));
+        }
+        
         // Save pattern ID
         if (isset($_POST['ht_pattern_id'][$menu_item_db_id])) {
             $pattern_id = sanitize_text_field($_POST['ht_pattern_id'][$menu_item_db_id]);
@@ -78,6 +172,20 @@ class HT_MegaMenuPlugin {
                 delete_post_meta($menu_item_db_id, 'ht_pattern_id');
             }
         }
+        
+        // Save page ID (from select or manual input)
+        $page_id = '';
+        if (isset($_POST['ht_page_id'][$menu_item_db_id]) && !empty($_POST['ht_page_id'][$menu_item_db_id])) {
+            $page_id = sanitize_text_field($_POST['ht_page_id'][$menu_item_db_id]);
+        } elseif (isset($_POST['ht_page_id_manual'][$menu_item_db_id]) && !empty($_POST['ht_page_id_manual'][$menu_item_db_id])) {
+            $page_id = sanitize_text_field($_POST['ht_page_id_manual'][$menu_item_db_id]);
+        }
+        
+        if (!empty($page_id)) {
+            update_post_meta($menu_item_db_id, 'ht_page_id', $page_id);
+        } else {
+            delete_post_meta($menu_item_db_id, 'ht_page_id');
+        }
     }
     
     /**
@@ -86,15 +194,29 @@ class HT_MegaMenuPlugin {
     public function ht_modify_menu_items($items, $args) {
         foreach ($items as $item) {
             $is_mega_menu = get_post_meta($item->ID, 'ht_is_mega_menu', true);
-            $pattern_id = get_post_meta($item->ID, 'ht_pattern_id', true);
             
-            if ($is_mega_menu && $pattern_id) {
-                // Get block pattern content
-                $pattern_content = $this->ht_get_block_pattern_content($pattern_id);
-                if ($pattern_content) {
+            if ($is_mega_menu) {
+                $content_type = get_post_meta($item->ID, 'ht_content_type', true);
+                $mega_content = false;
+                
+                // Get content based on type
+                if ($content_type === 'page') {
+                    $page_id = get_post_meta($item->ID, 'ht_page_id', true);
+                    if ($page_id) {
+                        $mega_content = $this->ht_get_page_content($page_id);
+                    }
+                } else {
+                    // Default to pattern
+                    $pattern_id = get_post_meta($item->ID, 'ht_pattern_id', true);
+                    if ($pattern_id) {
+                        $mega_content = $this->ht_get_block_pattern_content($pattern_id);
+                    }
+                }
+                
+                if ($mega_content) {
                     // Add mega menu class and content
                     $item->classes[] = 'ht-has-mega-menu';
-                    $item->ht_mega_menu_content = $pattern_content;
+                    $item->ht_mega_menu_content = $mega_content;
                 }
             }
         }
@@ -124,6 +246,36 @@ class HT_MegaMenuPlugin {
     }
     
     /**
+     * Get page content by ID
+     */
+    private function ht_get_page_content($page_id) {
+        $page = get_post($page_id);
+        
+        if (!$page || $page->post_type !== 'page' || $page->post_status !== 'publish') {
+            return false;
+        }
+        
+        // Get the page content
+        $content = $page->post_content;
+        
+        // If using Gutenberg blocks
+        if (has_blocks($content)) {
+            $blocks = parse_blocks($content);
+            $rendered_content = '';
+            
+            foreach ($blocks as $block) {
+                $rendered_content .= render_block($block);
+            }
+            
+            return $rendered_content;
+        } else {
+            // For classic editor or page builders
+            // Apply content filters to process shortcodes, etc.
+            return apply_filters('the_content', $content);
+        }
+    }
+    
+    /**
      * Enqueue admin assets
      */
     public function ht_enqueue_admin_assets($hook) {
@@ -131,19 +283,140 @@ class HT_MegaMenuPlugin {
             ?>
             <script>
             jQuery(document).ready(function($) {
-                // Toggle pattern ID field based on checkbox
-                $(document).on('change', '.ht-mega-menu-checkbox', function() {
-                    var $this = $(this);
-                    var $patternField = $this.closest('.ht-mega-menu-fields').find('.ht-mega-menu-pattern-field');
+                // Function to handle mega menu toggle
+                function handleMegaMenuToggle($checkbox) {
+                    var $container = $checkbox.closest('.ht-mega-menu-fields');
+                    var $contentOptions = $container.find('.ht-mega-menu-content-options');
                     
-                    if ($this.is(':checked')) {
-                        $patternField.show();
+                    if ($checkbox.is(':checked')) {
+                        $contentOptions.slideDown(200);
+                        // Trigger content type change
+                        handleContentTypeChange($container.find('.ht-content-type-selector'));
                     } else {
-                        $patternField.hide();
+                        $contentOptions.slideUp(200);
+                    }
+                }
+                
+                // Function to handle content type change
+                function handleContentTypeChange($selector) {
+                    if (!$selector.length) return;
+                    
+                    var contentType = $selector.val();
+                    var $container = $selector.closest('.ht-mega-menu-fields');
+                    var $patternField = $container.find('.ht-mega-menu-pattern-field');
+                    var $pageField = $container.find('.ht-mega-menu-page-field');
+                    
+                    // Hide all first with no animation
+                    $patternField.hide();
+                    $pageField.hide();
+                    
+                    // Show the selected one
+                    if (contentType === 'pattern') {
+                        $patternField.fadeIn(200);
+                    } else if (contentType === 'page') {
+                        $pageField.fadeIn(200);
+                    }
+                }
+                
+                // Bind events using event delegation
+                $(document).on('change', '.ht-mega-menu-checkbox', function(e) {
+                    e.stopPropagation();
+                    handleMegaMenuToggle($(this));
+                });
+                
+                $(document).on('change', '.ht-content-type-selector', function(e) {
+                    e.stopPropagation();
+                    handleContentTypeChange($(this));
+                });
+                
+                // Page ID syncing
+                $(document).on('input change', '.ht-page-id-manual', function() {
+                    var pageId = $(this).val();
+                    var $select = $(this).closest('.ht-mega-menu-page-field').find('.ht-page-select');
+                    $select.val(pageId);
+                });
+                
+                $(document).on('change', '.ht-page-select', function() {
+                    var pageId = $(this).val();
+                    var $input = $(this).closest('.ht-mega-menu-page-field').find('.ht-page-id-manual');
+                    $input.val(pageId);
+                });
+                
+                // Initialize function
+                function initializeAllFields() {
+                    $('.ht-mega-menu-checkbox').each(function() {
+                        var $checkbox = $(this);
+                        if ($checkbox.is(':checked')) {
+                            var $container = $checkbox.closest('.ht-mega-menu-fields');
+                            $container.find('.ht-mega-menu-content-options').show();
+                            handleContentTypeChange($container.find('.ht-content-type-selector'));
+                        }
+                    });
+                }
+                
+                // Initialize on load
+                initializeAllFields();
+                
+                // Re-initialize when menu items are added or modified
+                if (typeof wpNavMenu !== 'undefined') {
+                    var originalAddMenuItemToBottom = wpNavMenu.addMenuItemToBottom;
+                    wpNavMenu.addMenuItemToBottom = function() {
+                        originalAddMenuItemToBottom.apply(this, arguments);
+                        setTimeout(initializeAllFields, 500);
+                    };
+                }
+                
+                // Re-initialize when menu item is clicked
+                $(document).on('click', '.menu-item-bar', function() {
+                    setTimeout(initializeAllFields, 100);
+                });
+                
+                // Watch for WordPress admin ajax complete
+                $(document).ajaxComplete(function(event, xhr, settings) {
+                    if (settings.data && settings.data.indexOf('action=add-menu-item') !== -1) {
+                        setTimeout(initializeAllFields, 500);
                     }
                 });
+                
+                // Force re-initialization periodically for dynamic content
+                setInterval(function() {
+                    $('.ht-mega-menu-checkbox:visible').each(function() {
+                        var $checkbox = $(this);
+                        var $container = $checkbox.closest('.ht-mega-menu-fields');
+                        var $contentOptions = $container.find('.ht-mega-menu-content-options');
+                        
+                        // Check if state is correct
+                        if ($checkbox.is(':checked') && !$contentOptions.is(':visible')) {
+                            $contentOptions.show();
+                            handleContentTypeChange($container.find('.ht-content-type-selector'));
+                        }
+                    });
+                }, 1000);
             });
             </script>
+            <style>
+            .ht-mega-menu-fields {
+                border: 1px solid #ddd;
+            }
+            .ht-mega-menu-fields label {
+                font-weight: normal;
+            }
+            .ht-mega-menu-fields strong {
+                font-weight: 600;
+            }
+            .ht-mega-menu-content-options {
+                border-left: 3px solid #0073aa;
+                padding-left: 10px;
+            }
+            .ht-content-field {
+                transition: all 0.2s ease;
+            }
+            /* Ensure fields are properly hidden initially */
+            .ht-mega-menu-pattern-field,
+            .ht-mega-menu-page-field {
+                display: none;
+            }
+            </style>
             <?php
         }
     }
@@ -343,17 +616,7 @@ class HT_MegaMenuPlugin {
             htMegaMenuItems.forEach(function(item) {
                 var link = item.querySelector('a');
                 if (link && link.dataset.htMegaMenuContent) {
-                    // Add arrow icon similar to Blocksy's dropdown arrow
-                    if (!link.querySelector('.ht-dropdown-arrow')) {
-                        var arrowSpan = document.createElement('span');
-                        arrowSpan.className = 'ht-dropdown-arrow';
-                        
-                        // Create SVG arrow that matches Blocksy's style
-                        arrowSpan.innerHTML = '<svg viewBox="0 0 15 15" fill="currentColor"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
-                        
-                        // Insert arrow after the link text
-                        link.appendChild(arrowSpan);
-                    }
+                    // Skip arrow addition - it's already added by PHP
                     
                     // Create dropdown
                     var dropdown = document.createElement('div');
@@ -362,27 +625,6 @@ class HT_MegaMenuPlugin {
                     item.appendChild(dropdown);
                 }
             });
-            
-            // For Blocksy theme compatibility - inject arrows into menu structure
-            function injectBlocksyArrows() {
-                // Target Blocksy menu items
-                var blocksyMenuItems = document.querySelectorAll('.ct-menu-item.ht-has-mega-menu > a, .menu-item.ht-has-mega-menu > a');
-                
-                blocksyMenuItems.forEach(function(link) {
-                    if (!link.querySelector('.ht-dropdown-arrow') && !link.querySelector('svg')) {
-                        var arrowSpan = document.createElement('span');
-                        arrowSpan.className = 'ht-dropdown-arrow';
-                        arrowSpan.innerHTML = '<svg viewBox="0 0 15 15" fill="currentColor"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
-                        link.appendChild(arrowSpan);
-                    }
-                });
-            }
-            
-            // Run arrow injection
-            injectBlocksyArrows();
-            
-            // Also run after a slight delay for dynamic menus
-            setTimeout(injectBlocksyArrows, 100);
             
             // Handle keyboard navigation
             var megaLinks = document.querySelectorAll('.ht-has-mega-menu > a');
@@ -417,8 +659,20 @@ function ht_add_mega_menu_content($item_output, $item, $depth, $args) {
         if (isset($item->ht_mega_menu_content)) {
             $item_output = str_replace('<a ', '<a data-ht-mega-menu-content="' . esc_attr($item->ht_mega_menu_content) . '" ', $item_output);
         }
+        
+        // Check if arrow already exists to avoid duplication
+        if (strpos($item_output, 'ht-dropdown-arrow') === false) {
+            // Add arrow icon to the menu item
+            $arrow_svg = '<span class="ht-dropdown-arrow"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg></span>';
+            
+            // Insert arrow before closing </a> tag
+            $item_output = str_replace('</a>', $arrow_svg . '</a>', $item_output);
+        }
     }
     
     return $item_output;
 }
+
+// Remove the duplicate filter - commenting it out
+// add_filter('nav_menu_item_title', 'ht_add_arrow_to_mega_menu_title', 10, 4);
 ?>
