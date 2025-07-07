@@ -43,6 +43,19 @@ class HT_MegaMenuPlugin {
         $page_id = get_post_meta($item_id, 'ht_page_id', true);
         $content_type = get_post_meta($item_id, 'ht_content_type', true);
         
+        // New options
+        $menu_width = get_post_meta($item_id, 'ht_menu_width', true) ?: 'default';
+        $custom_width = get_post_meta($item_id, 'ht_custom_width', true) ?: '1200';
+        $menu_position = get_post_meta($item_id, 'ht_menu_position', true) ?: 'center';
+        
+        // Custom CSS options
+        $bg_color = get_post_meta($item_id, 'ht_bg_color', true);
+        $border_radius = get_post_meta($item_id, 'ht_border_radius', true) ?: '8';
+        $border_width = get_post_meta($item_id, 'ht_border_width', true) ?: '1';
+        $border_color = get_post_meta($item_id, 'ht_border_color', true) ?: '#e0e0e0';
+        $padding = get_post_meta($item_id, 'ht_padding', true) ?: '30';
+        $margin_top = get_post_meta($item_id, 'ht_margin_top', true) ?: '10';
+        
         // Default content type
         if (empty($content_type)) {
             $content_type = 'pattern';
@@ -62,53 +75,146 @@ class HT_MegaMenuPlugin {
             </p>
             
             <div class="ht-mega-menu-content-options ht-content-options-<?php echo $item_id; ?>" style="<?php echo $is_mega_menu ? 'margin-left: 20px; margin-top: 10px;' : 'display:none; margin-left: 20px; margin-top: 10px;'; ?>">
-                <p class="description">
-                    <label>
-                        <strong>Content Type:</strong>
-                        <select name="ht_content_type[<?php echo $item_id; ?>]" 
-                                class="ht-content-type-selector"
-                                onchange="htContentTypeChange(this, <?php echo $item_id; ?>)">
-                            <option value="pattern" <?php selected($content_type, 'pattern'); ?>>Block Pattern</option>
-                            <option value="page" <?php selected($content_type, 'page'); ?>>Page Content</option>
-                        </select>
-                    </label>
-                </p>
                 
-                <!-- Block Pattern Field -->
-                <div class="ht-mega-menu-pattern-field ht-pattern-field-<?php echo $item_id; ?> ht-content-field" style="<?php echo ($content_type === 'pattern') ? '' : 'display:none;'; ?>">
+                <!-- Content Settings -->
+                <div style="background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #23282d;">Content Settings</h4>
+                    
                     <p class="description">
                         <label>
-                            <strong>Block Pattern ID:</strong><br>
-                            <input type="text" name="ht_pattern_id[<?php echo $item_id; ?>]" value="<?php echo esc_attr($pattern_id); ?>" placeholder="e.g., 1026" style="width: 200px; margin-top: 5px;">
+                            <strong>Content Type:</strong>
+                            <select name="ht_content_type[<?php echo $item_id; ?>]" 
+                                    class="ht-content-type-selector"
+                                    onchange="htContentTypeChange(this, <?php echo $item_id; ?>)">
+                                <option value="pattern" <?php selected($content_type, 'pattern'); ?>>Block Pattern</option>
+                                <option value="page" <?php selected($content_type, 'page'); ?>>Page Content</option>
+                            </select>
+                        </label>
+                    </p>
+                    
+                    <!-- Block Pattern Field -->
+                    <div class="ht-mega-menu-pattern-field ht-pattern-field-<?php echo $item_id; ?> ht-content-field" style="<?php echo ($content_type === 'pattern') ? '' : 'display:none;'; ?>">
+                        <p class="description">
+                            <label>
+                                <strong>Block Pattern ID:</strong><br>
+                                <input type="text" name="ht_pattern_id[<?php echo $item_id; ?>]" value="<?php echo esc_attr($pattern_id); ?>" placeholder="e.g., 1026" style="width: 200px; margin-top: 5px;">
+                            </label>
+                        </p>
+                    </div>
+                    
+                    <!-- Page Selection Field -->
+                    <div class="ht-mega-menu-page-field ht-page-field-<?php echo $item_id; ?> ht-content-field" style="<?php echo ($content_type === 'page') ? '' : 'display:none;'; ?>">
+                        <p class="description">
+                            <label>
+                                <strong>Select Page:</strong><br>
+                                <select name="ht_page_id[<?php echo $item_id; ?>]" class="ht-page-select" style="width: 200px; margin-top: 5px;">
+                                    <option value="">-- Select Page --</option>
+                                    <?php
+                                    $pages = get_pages(array(
+                                        'post_status' => 'publish',
+                                        'sort_order' => 'ASC',
+                                        'sort_column' => 'post_title',
+                                    ));
+                                    foreach ($pages as $page) {
+                                        echo '<option value="' . $page->ID . '" ' . selected($page_id, $page->ID, false) . '>' . 
+                                             esc_html($page->post_title) . ' (ID: ' . $page->ID . ')</option>';
+                                    }
+                                    ?>
+                                </select>
+                                <span style="display: block; font-size: 11px; color: #666; margin-top: 3px;">
+                                    Or enter Page ID manually: 
+                                    <input type="text" name="ht_page_id_manual[<?php echo $item_id; ?>]" class="ht-page-id-manual" value="<?php echo esc_attr($page_id); ?>" placeholder="123" style="width: 60px;">
+                                </span>
+                            </label>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Layout Settings -->
+                <div style="background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #23282d;">Layout Settings</h4>
+                    
+                    <p class="description">
+                        <label>
+                            <strong>Menu Width:</strong>
+                            <select name="ht_menu_width[<?php echo $item_id; ?>]" 
+                                    class="ht-menu-width-selector"
+                                    onchange="htMenuWidthChange(this, <?php echo $item_id; ?>)">
+                                <option value="default" <?php selected($menu_width, 'default'); ?>>Default (800px)</option>
+                                <option value="full" <?php selected($menu_width, 'full'); ?>>Full Width</option>
+                                <option value="custom" <?php selected($menu_width, 'custom'); ?>>Custom Width</option>
+                            </select>
+                        </label>
+                    </p>
+                    
+                    <div class="ht-custom-width-field ht-custom-width-<?php echo $item_id; ?>" style="<?php echo ($menu_width === 'custom') ? '' : 'display:none;'; ?>">
+                        <p class="description">
+                            <label>
+                                <strong>Custom Width (px):</strong><br>
+                                <input type="number" name="ht_custom_width[<?php echo $item_id; ?>]" value="<?php echo esc_attr($custom_width); ?>" placeholder="1200" style="width: 100px;">
+                            </label>
+                        </p>
+                    </div>
+                    
+                    <p class="description">
+                        <label>
+                            <strong>Menu Position:</strong>
+                            <select name="ht_menu_position[<?php echo $item_id; ?>]">
+                                <option value="left" <?php selected($menu_position, 'left'); ?>>Left Aligned</option>
+                                <option value="center" <?php selected($menu_position, 'center'); ?>>Center (Default)</option>
+                                <option value="right" <?php selected($menu_position, 'right'); ?>>Right Aligned</option>
+                            </select>
                         </label>
                     </p>
                 </div>
                 
-                <!-- Page Selection Field -->
-                <div class="ht-mega-menu-page-field ht-page-field-<?php echo $item_id; ?> ht-content-field" style="<?php echo ($content_type === 'page') ? '' : 'display:none;'; ?>">
-                    <p class="description">
-                        <label>
-                            <strong>Select Page:</strong><br>
-                            <select name="ht_page_id[<?php echo $item_id; ?>]" class="ht-page-select" style="width: 200px; margin-top: 5px;">
-                                <option value="">-- Select Page --</option>
-                                <?php
-                                $pages = get_pages(array(
-                                    'post_status' => 'publish',
-                                    'sort_order' => 'ASC',
-                                    'sort_column' => 'post_title',
-                                ));
-                                foreach ($pages as $page) {
-                                    echo '<option value="' . $page->ID . '" ' . selected($page_id, $page->ID, false) . '>' . 
-                                         esc_html($page->post_title) . ' (ID: ' . $page->ID . ')</option>';
-                                }
-                                ?>
-                            </select>
-                            <span style="display: block; font-size: 11px; color: #666; margin-top: 3px;">
-                                Or enter Page ID manually: 
-                                <input type="text" name="ht_page_id_manual[<?php echo $item_id; ?>]" class="ht-page-id-manual" value="<?php echo esc_attr($page_id); ?>" placeholder="123" style="width: 60px;">
-                            </span>
-                        </label>
-                    </p>
+                <!-- Style Settings -->
+                <div style="background: #fff; padding: 10px; border-radius: 4px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px; color: #23282d;">Style Settings</h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <p class="description">
+                            <label>
+                                <strong>Background Color:</strong><br>
+                                <input type="text" name="ht_bg_color[<?php echo $item_id; ?>]" value="<?php echo esc_attr($bg_color); ?>" placeholder="#ffffff" class="ht-color-picker" style="width: 100%;">
+                            </label>
+                        </p>
+                        
+                        <p class="description">
+                            <label>
+                                <strong>Border Color:</strong><br>
+                                <input type="text" name="ht_border_color[<?php echo $item_id; ?>]" value="<?php echo esc_attr($border_color); ?>" placeholder="#e0e0e0" class="ht-color-picker" style="width: 100%;">
+                            </label>
+                        </p>
+                        
+                        <p class="description">
+                            <label>
+                                <strong>Border Radius (px):</strong><br>
+                                <input type="number" name="ht_border_radius[<?php echo $item_id; ?>]" value="<?php echo esc_attr($border_radius); ?>" placeholder="8" style="width: 100%;">
+                            </label>
+                        </p>
+                        
+                        <p class="description">
+                            <label>
+                                <strong>Border Width (px):</strong><br>
+                                <input type="number" name="ht_border_width[<?php echo $item_id; ?>]" value="<?php echo esc_attr($border_width); ?>" placeholder="1" style="width: 100%;">
+                            </label>
+                        </p>
+                        
+                        <p class="description">
+                            <label>
+                                <strong>Padding (px):</strong><br>
+                                <input type="number" name="ht_padding[<?php echo $item_id; ?>]" value="<?php echo esc_attr($padding); ?>" placeholder="30" style="width: 100%;">
+                            </label>
+                        </p>
+                        
+                        <p class="description">
+                            <label>
+                                <strong>Margin Top (px):</strong><br>
+                                <input type="number" name="ht_margin_top[<?php echo $item_id; ?>]" value="<?php echo esc_attr($margin_top); ?>" placeholder="10" style="width: 100%;">
+                            </label>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -141,6 +247,19 @@ class HT_MegaMenuPlugin {
                 patternField.style.display = 'block';
             } else if (contentType === 'page' && pageField) {
                 pageField.style.display = 'block';
+            }
+        }
+        
+        function htMenuWidthChange(selector, itemId) {
+            var widthType = selector.value;
+            var customField = document.querySelector('.ht-custom-width-' + itemId);
+            
+            if (customField) {
+                if (widthType === 'custom') {
+                    customField.style.display = 'block';
+                } else {
+                    customField.style.display = 'none';
+                }
             }
         }
         </script>
@@ -186,6 +305,44 @@ class HT_MegaMenuPlugin {
         } else {
             delete_post_meta($menu_item_db_id, 'ht_page_id');
         }
+        
+        // Save layout settings
+        if (isset($_POST['ht_menu_width'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_menu_width', sanitize_text_field($_POST['ht_menu_width'][$menu_item_db_id]));
+        }
+        
+        if (isset($_POST['ht_custom_width'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_custom_width', sanitize_text_field($_POST['ht_custom_width'][$menu_item_db_id]));
+        }
+        
+        if (isset($_POST['ht_menu_position'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_menu_position', sanitize_text_field($_POST['ht_menu_position'][$menu_item_db_id]));
+        }
+        
+        // Save style settings
+        if (isset($_POST['ht_bg_color'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_bg_color', sanitize_hex_color($_POST['ht_bg_color'][$menu_item_db_id]));
+        }
+        
+        if (isset($_POST['ht_border_color'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_border_color', sanitize_hex_color($_POST['ht_border_color'][$menu_item_db_id]));
+        }
+        
+        if (isset($_POST['ht_border_radius'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_border_radius', absint($_POST['ht_border_radius'][$menu_item_db_id]));
+        }
+        
+        if (isset($_POST['ht_border_width'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_border_width', absint($_POST['ht_border_width'][$menu_item_db_id]));
+        }
+        
+        if (isset($_POST['ht_padding'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_padding', absint($_POST['ht_padding'][$menu_item_db_id]));
+        }
+        
+        if (isset($_POST['ht_margin_top'][$menu_item_db_id])) {
+            update_post_meta($menu_item_db_id, 'ht_margin_top', absint($_POST['ht_margin_top'][$menu_item_db_id]));
+        }
     }
     
     /**
@@ -216,7 +373,27 @@ class HT_MegaMenuPlugin {
                 if ($mega_content) {
                     // Add mega menu class and content
                     $item->classes[] = 'ht-has-mega-menu';
+                    
+                    // Add custom classes for layout
+                    $menu_width = get_post_meta($item->ID, 'ht_menu_width', true) ?: 'default';
+                    $menu_position = get_post_meta($item->ID, 'ht_menu_position', true) ?: 'center';
+                    
+                    $item->classes[] = 'ht-mega-width-' . $menu_width;
+                    $item->classes[] = 'ht-mega-position-' . $menu_position;
+                    
+                    // Store all custom data
                     $item->ht_mega_menu_content = $mega_content;
+                    $item->ht_menu_width = $menu_width;
+                    $item->ht_custom_width = get_post_meta($item->ID, 'ht_custom_width', true) ?: '1200';
+                    $item->ht_menu_position = $menu_position;
+                    
+                    // Style data
+                    $item->ht_bg_color = get_post_meta($item->ID, 'ht_bg_color', true);
+                    $item->ht_border_radius = get_post_meta($item->ID, 'ht_border_radius', true) ?: '8';
+                    $item->ht_border_width = get_post_meta($item->ID, 'ht_border_width', true) ?: '1';
+                    $item->ht_border_color = get_post_meta($item->ID, 'ht_border_color', true) ?: '#e0e0e0';
+                    $item->ht_padding = get_post_meta($item->ID, 'ht_padding', true) ?: '30';
+                    $item->ht_margin_top = get_post_meta($item->ID, 'ht_margin_top', true) ?: '10';
                 }
             }
         }
@@ -616,11 +793,46 @@ class HT_MegaMenuPlugin {
             htMegaMenuItems.forEach(function(item) {
                 var link = item.querySelector('a');
                 if (link && link.dataset.htMegaMenuContent) {
-                    // Skip arrow addition - it's already added by PHP
-                    
                     // Create dropdown
                     var dropdown = document.createElement('div');
                     dropdown.className = 'ht-mega-menu-dropdown';
+                    
+                    // Apply custom styles from data attributes
+                    var menuWidth = link.dataset.menuWidth || 'default';
+                    var customWidth = link.dataset.customWidth || '1200';
+                    var menuPosition = link.dataset.menuPosition || 'center';
+                    var bgColor = link.dataset.bgColor || '#ffffff';
+                    var borderRadius = link.dataset.borderRadius || '8';
+                    var borderWidth = link.dataset.borderWidth || '1';
+                    var borderColor = link.dataset.borderColor || '#e0e0e0';
+                    var padding = link.dataset.padding || '30';
+                    var marginTop = link.dataset.marginTop || '10';
+                    
+                    // Add position class
+                    dropdown.className += ' ht-mega-position-' + menuPosition;
+                    dropdown.className += ' ht-mega-width-' + menuWidth;
+                    
+                    // Apply inline styles
+                    dropdown.style.backgroundColor = bgColor;
+                    dropdown.style.borderRadius = borderRadius + 'px';
+                    dropdown.style.borderWidth = borderWidth + 'px';
+                    dropdown.style.borderColor = borderColor;
+                    dropdown.style.borderStyle = 'solid';
+                    dropdown.style.padding = padding + 'px';
+                    dropdown.style.marginTop = marginTop + 'px';
+                    
+                    // Apply width based on setting
+                    if (menuWidth === 'full') {
+                        dropdown.style.width = '100vw';
+                        dropdown.style.left = '50%';
+                        dropdown.style.transform = 'translateX(-50vw)';
+                        dropdown.style.maxWidth = 'none';
+                    } else if (menuWidth === 'custom') {
+                        dropdown.style.width = customWidth + 'px';
+                        dropdown.style.maxWidth = customWidth + 'px';
+                    }
+                    
+                    // Set content
                     dropdown.innerHTML = link.dataset.htMegaMenuContent;
                     item.appendChild(dropdown);
                 }
@@ -658,6 +870,38 @@ function ht_add_mega_menu_content($item_output, $item, $depth, $args) {
         // Add mega menu content as data attribute for JavaScript to handle
         if (isset($item->ht_mega_menu_content)) {
             $item_output = str_replace('<a ', '<a data-ht-mega-menu-content="' . esc_attr($item->ht_mega_menu_content) . '" ', $item_output);
+            
+            // Add custom style data attributes
+            $custom_attrs = '';
+            if (isset($item->ht_menu_width)) {
+                $custom_attrs .= ' data-menu-width="' . esc_attr($item->ht_menu_width) . '"';
+            }
+            if (isset($item->ht_custom_width)) {
+                $custom_attrs .= ' data-custom-width="' . esc_attr($item->ht_custom_width) . '"';
+            }
+            if (isset($item->ht_menu_position)) {
+                $custom_attrs .= ' data-menu-position="' . esc_attr($item->ht_menu_position) . '"';
+            }
+            if (isset($item->ht_bg_color) && !empty($item->ht_bg_color)) {
+                $custom_attrs .= ' data-bg-color="' . esc_attr($item->ht_bg_color) . '"';
+            }
+            if (isset($item->ht_border_radius)) {
+                $custom_attrs .= ' data-border-radius="' . esc_attr($item->ht_border_radius) . '"';
+            }
+            if (isset($item->ht_border_width)) {
+                $custom_attrs .= ' data-border-width="' . esc_attr($item->ht_border_width) . '"';
+            }
+            if (isset($item->ht_border_color)) {
+                $custom_attrs .= ' data-border-color="' . esc_attr($item->ht_border_color) . '"';
+            }
+            if (isset($item->ht_padding)) {
+                $custom_attrs .= ' data-padding="' . esc_attr($item->ht_padding) . '"';
+            }
+            if (isset($item->ht_margin_top)) {
+                $custom_attrs .= ' data-margin-top="' . esc_attr($item->ht_margin_top) . '"';
+            }
+            
+            $item_output = str_replace('<a ', '<a' . $custom_attrs . ' ', $item_output);
         }
         
         // Check if arrow already exists to avoid duplication
