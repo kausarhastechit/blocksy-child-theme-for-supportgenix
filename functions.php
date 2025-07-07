@@ -1,13 +1,13 @@
 <?php
 
 if (! defined('WP_DEBUG')) {
-	die( 'Direct access forbidden.' );
+    die( 'Direct access forbidden.' );
 }
-define( 'CHILD_THEME_BLOCKSY_VERSION', '1.0.0' );
+define( 'CHILD_THEME_BLOCKSY_VERSION', '2.0.0' );
 
 add_action( 'wp_enqueue_scripts', function () {
-	wp_enqueue_style( 'parent-style', get_template_directory_uri() . '/style.css' );
-	sgenix_theme_conditional_scripts();
+    wp_enqueue_style( 'parent-style', get_template_directory_uri() . '/style.css' );
+    sgenix_theme_conditional_scripts();
 
 });
 
@@ -16,10 +16,10 @@ add_action( 'wp_enqueue_scripts', function () {
  * @return [void]
  */
 function sgenix_theme_conditional_scripts(){
-	  if( get_page_template_slug() === 'price-page.php' ){
+      if( get_page_template_slug() === 'price-page.php' ){
         wp_enqueue_style('sgenix-price-style-min', get_stylesheet_directory_uri() . '/assets/css/price-style.css');
-		wp_enqueue_script('support-genix-plugin-min', get_stylesheet_directory_uri() . '/assets/js/plugins-min.js', array('jquery'), CHILD_THEME_BLOCKSY_VERSION, true );
-		wp_enqueue_script('support-genix-price-min', get_stylesheet_directory_uri() . '/assets/js/price.active.js', array('jquery'), CHILD_THEME_BLOCKSY_VERSION, true );
+        wp_enqueue_script('support-genix-plugin-min', get_stylesheet_directory_uri() . '/assets/js/plugins-min.js', array('jquery'), CHILD_THEME_BLOCKSY_VERSION, true );
+        wp_enqueue_script('support-genix-price-min', get_stylesheet_directory_uri() . '/assets/js/price.active.js', array('jquery'), CHILD_THEME_BLOCKSY_VERSION, true );
     }
 
 }

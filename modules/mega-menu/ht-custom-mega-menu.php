@@ -680,10 +680,6 @@ class HT_MegaMenuPlugin {
         .ht-mega-menu-dropdown {
             position: absolute;
             top: 100%;
-            left: 50%;
-            transform: translateX(-50%) translateY(-10px);
-            min-width: 800px;
-            max-width: 1200px;
             background: #fff;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
@@ -694,6 +690,39 @@ class HT_MegaMenuPlugin {
             transition: all 0.3s ease;
             padding: 30px;
             margin-top: 10px;
+            min-width: 800px;
+            max-width: 1200px;
+        }
+        
+        /* Position variations */
+        .ht-mega-menu-dropdown.ht-mega-position-left {
+            left: 0;
+            transform: translateY(-10px);
+        }
+        
+        .ht-mega-menu-dropdown.ht-mega-position-center {
+            left: 50%;
+            transform: translateX(-50%) translateY(-10px);
+        }
+        
+        .ht-mega-menu-dropdown.ht-mega-position-right {
+            right: 0;
+            left: auto;
+            transform: translateY(-10px);
+        }
+        
+        /* Width variations */
+        .ht-mega-menu-dropdown.ht-mega-width-full {
+            left: 0;
+            right: 0;
+            width: 100vw;
+            max-width: none;
+            position: fixed;
+            transform: translateY(-10px);
+        }
+        
+        .ht-mega-menu-dropdown.ht-mega-width-custom {
+            /* Custom width will be set inline */
         }
         
         /* Arrow pointing to parent menu */
@@ -701,8 +730,6 @@ class HT_MegaMenuPlugin {
             content: '';
             position: absolute;
             top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
             width: 0;
             height: 0;
             border-left: 10px solid transparent;
@@ -714,8 +741,6 @@ class HT_MegaMenuPlugin {
             content: '';
             position: absolute;
             top: -9px;
-            left: 50%;
-            transform: translateX(-50%);
             width: 0;
             height: 0;
             border-left: 10px solid transparent;
@@ -723,17 +748,47 @@ class HT_MegaMenuPlugin {
             border-bottom: 10px solid #fff;
         }
         
+        /* Arrow position based on alignment */
+        .ht-mega-menu-dropdown.ht-mega-position-left::before,
+        .ht-mega-menu-dropdown.ht-mega-position-left::after {
+            left: 20px;
+        }
+        
+        .ht-mega-menu-dropdown.ht-mega-position-center::before,
+        .ht-mega-menu-dropdown.ht-mega-position-center::after {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .ht-mega-menu-dropdown.ht-mega-position-right::before,
+        .ht-mega-menu-dropdown.ht-mega-position-right::after {
+            right: 20px;
+            left: auto;
+        }
+        
+        /* Hover states */
         .ht-has-mega-menu:hover .ht-mega-menu-dropdown {
             opacity: 1;
             visibility: visible;
+        }
+        
+        .ht-has-mega-menu:hover .ht-mega-menu-dropdown.ht-mega-position-left,
+        .ht-has-mega-menu:hover .ht-mega-menu-dropdown.ht-mega-position-right {
+            transform: translateY(0);
+        }
+        
+        .ht-has-mega-menu:hover .ht-mega-menu-dropdown.ht-mega-position-center {
             transform: translateX(-50%) translateY(0);
+        }
+        
+        .ht-has-mega-menu:hover .ht-mega-menu-dropdown.ht-mega-width-full {
+            transform: translateY(0);
         }
         
         /* Prevent dropdown from closing when hovering over it */
         .ht-mega-menu-dropdown:hover {
             opacity: 1;
             visibility: visible;
-            transform: translateX(-50%) translateY(0);
         }
         
         /* Adjust for different themes */
@@ -743,34 +798,22 @@ class HT_MegaMenuPlugin {
             top: 100%;
         }
         
-        /* Full width option */
-        .ht-mega-menu-dropdown.full-width {
-            left: 0;
-            right: 0;
-            transform: translateY(-10px);
-            width: 100vw;
-            max-width: none;
-            position: fixed;
-        }
-        
-        .ht-mega-menu-dropdown.full-width:hover {
-            transform: translateY(0);
-        }
-        
         /* Responsive */
         @media (max-width: 768px) {
             .ht-mega-menu-dropdown {
-                position: static;
+                position: static !important;
                 min-width: auto;
-                width: 100%;
+                width: 100% !important;
                 opacity: 1;
                 visibility: visible;
-                transform: none;
+                transform: none !important;
                 box-shadow: none;
                 border: none;
                 padding: 15px;
                 margin-top: 0;
                 border-radius: 0;
+                left: 0 !important;
+                right: 0 !important;
             }
             
             .ht-mega-menu-dropdown::before,
@@ -809,8 +852,8 @@ class HT_MegaMenuPlugin {
                     var marginTop = link.dataset.marginTop || '10';
                     
                     // Add position class
-                    dropdown.className += ' ht-mega-position-' + menuPosition;
-                    dropdown.className += ' ht-mega-width-' + menuWidth;
+                    dropdown.classList.add('ht-mega-position-' + menuPosition);
+                    dropdown.classList.add('ht-mega-width-' + menuWidth);
                     
                     // Apply inline styles
                     dropdown.style.backgroundColor = bgColor;
@@ -823,20 +866,38 @@ class HT_MegaMenuPlugin {
                     
                     // Apply width based on setting
                     if (menuWidth === 'full') {
-                        dropdown.style.width = '100vw';
-                        dropdown.style.left = '50%';
-                        dropdown.style.transform = 'translateX(-50vw)';
-                        dropdown.style.maxWidth = 'none';
+                        // Full width is handled by CSS class
                     } else if (menuWidth === 'custom') {
                         dropdown.style.width = customWidth + 'px';
                         dropdown.style.maxWidth = customWidth + 'px';
+                        dropdown.style.minWidth = customWidth + 'px';
                     }
                     
                     // Set content
                     dropdown.innerHTML = link.dataset.htMegaMenuContent;
                     item.appendChild(dropdown);
+                    
+                    // Adjust position for edge cases
+                    setTimeout(function() {
+                        adjustDropdownPosition(dropdown, menuPosition);
+                    }, 100);
                 }
             });
+            
+            // Function to adjust dropdown position if it goes off-screen
+            function adjustDropdownPosition(dropdown, position) {
+                var rect = dropdown.getBoundingClientRect();
+                var windowWidth = window.innerWidth;
+                
+                // Check if dropdown goes off-screen and adjust
+                if (position === 'left' && rect.right > windowWidth) {
+                    dropdown.style.left = 'auto';
+                    dropdown.style.right = '0';
+                } else if (position === 'right' && rect.left < 0) {
+                    dropdown.style.right = 'auto';
+                    dropdown.style.left = '0';
+                }
+            }
             
             // Handle keyboard navigation
             var megaLinks = document.querySelectorAll('.ht-has-mega-menu > a');
@@ -851,6 +912,21 @@ class HT_MegaMenuPlugin {
                         }
                     }
                 });
+            });
+            
+            // Reposition on window resize
+            var resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    document.querySelectorAll('.ht-mega-menu-dropdown').forEach(function(dropdown) {
+                        var link = dropdown.previousElementSibling;
+                        if (link) {
+                            var position = link.dataset.menuPosition || 'center';
+                            adjustDropdownPosition(dropdown, position);
+                        }
+                    });
+                }, 250);
             });
         });
         </script>
